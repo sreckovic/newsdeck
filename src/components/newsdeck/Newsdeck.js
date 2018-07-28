@@ -9,14 +9,32 @@ import Spinner from '../ui/spinner/Spinner';
 class Newsdeck extends Component {
     state = {
         arrangement: [],
+        loadArrangement: [],
         newspapers: {},
         predicted_sales: null,
+        sales: null, // Save first predicted_sales
         loading: true,
         errors: null
     };
 
     componentDidMount() {
-        this.fetchData('current_arrangement', '');
+        // this.fetchData('current_arrangement', '');
+        axios
+            .get('/current_arrangement')
+            .then(res => {
+                this.setState({
+                    arrangement: res.data.arrangement,
+                    newspapers: res.data.newspapers,
+                    predicted_sales: res.data.predicted_sales,
+                    loading: false
+                });
+            })
+            .then(res => {
+                this.setState({ sales: this.state.predicted_sales });
+            })
+            .catch(err => {
+                this.setState({ errors: err });
+            });
     }
 
     fetchData(url, sequence) {
@@ -45,12 +63,12 @@ class Newsdeck extends Component {
     };
 
     onDrop = e => {
-        let id = parseInt(e.dataTransfer.getData('text'));
-        let cur = parseInt(e.target.parentNode.parentNode.id);
+        let id = parseInt(e.dataTransfer.getData('text'), 10);
+        let cur = parseInt(e.target.parentNode.parentNode.id, 10);
         let inc, out;
 
         // Newspaper ID's
-        this.state.arrangement.map(cell => {
+        this.state.arrangement.forEach(cell => {
             if (cell.cell_number === id) {
                 inc = cell.newspaper_id;
             }
@@ -60,7 +78,7 @@ class Newsdeck extends Component {
         });
 
         // Replace Newspaper ID's in arrangement cell
-        let arrangement = this.state.arrangement.filter(cell => {
+        this.state.arrangement.filter(cell => {
             if (cell.cell_number === id) {
                 cell.newspaper_id = out;
             } else if (cell.cell_number === cur) {
@@ -82,7 +100,7 @@ class Newsdeck extends Component {
         let sequence = [];
 
         // Create new sequence (arrangement)
-        this.state.arrangement.map(cell => {
+        this.state.arrangement.forEach(cell => {
             sequence.push(cell.newspaper_id);
         });
 
@@ -157,14 +175,15 @@ class Newsdeck extends Component {
 
         return (
             <div>
+                {this.state.errors ? <div className="error" /> : null}
                 {this.state.loading ? (
                     content
                 ) : (
                     <div className="newsdeck-list">{content}</div>
                 )}
-
                 <StatusBar
                     predicted_sales={this.state.predicted_sales}
+                    sales={this.state.sales}
                     onClickHandler={this.onClickHandler}
                 />
             </div>
