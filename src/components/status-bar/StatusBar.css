@@ -4,12 +4,31 @@
     bottom: 0px;
     left: 0;
     padding: 1em 2em;
-    height: 2.8em;
     background-color: #fff;
-    border-top: 2px solid #dddddd;
+    border-top: 2px solid #ddd;
     box-shadow: 0 1px 12px #e9e9e9;
 }
 
 .status-bar p {
     line-height: 2.8;
+}
+
+.status-bar .submit {
+    position: absolute;
+    right: 1em;
+    top: 0;
+    padding: 1em;
+}
+
+.status-bar .submit button {
+    background-color: #ddd;
+    border: 2px solid #ddd;
+    border-radius: 3px;
+    padding: 10px;
+    cursor: pointer;
+    outline: none;
+}
+
+.status-bar .submit button:hover {
+    background-color: #f3f3f3;
 }

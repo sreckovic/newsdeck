@@ -16,10 +16,10 @@ class Newsdeck extends Component {
     };
 
     componentDidMount() {
-        this.getData('current_arrangement', '');
+        this.fetchData('current_arrangement', '');
     }
 
-    getData(url, sequence) {
+    fetchData(url, sequence) {
         axios
             .get(`/${url}${sequence}`)
             .then(res => {
@@ -86,8 +86,15 @@ class Newsdeck extends Component {
             sequence.push(cell.newspaper_id);
         });
 
-        this.getData('get_predicted_sales?arrangement=', sequence);
+        // Enable <Spinner /> when updating
+        // this.setState({ loading: true });
+
+        this.fetchData('get_predicted_sales?arrangement=', sequence);
     }
+
+    onClickHandler = () => {
+        console.log(this.state.arrangement);
+    };
 
     render() {
         let papers = this.state.newspapers;
@@ -150,8 +157,16 @@ class Newsdeck extends Component {
 
         return (
             <div>
-                <div className="newsdeck-list">{content}</div>
-                <StatusBar predicted_sales={this.state.predicted_sales} />
+                {this.state.loading ? (
+                    content
+                ) : (
+                    <div className="newsdeck-list">{content}</div>
+                )}
+
+                <StatusBar
+                    predicted_sales={this.state.predicted_sales}
+                    onClickHandler={this.onClickHandler}
+                />
             </div>
         );
     }
