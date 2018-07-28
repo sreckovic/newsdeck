@@ -7,8 +7,12 @@ const StatusBar = ({ predicted_sales, sales, onClickHandler }) => {
         <div className="status-bar">
             <p>
                 New layout predicted sales:{' '}
-                <strong>{Math.round(predicted_sales * 100) / 100}</strong>,
-                current layout: <strong>{sales}</strong>
+                <strong>
+                    {predicted_sales
+                        ? Math.round(predicted_sales * 100) / 100
+                        : 'Loading...'}
+                </strong>
+                {sales ? `, current layout: ${sales}` : null}
             </p>
             <div className="submit">
                 <button onClick={onClickHandler}>Submit</button>

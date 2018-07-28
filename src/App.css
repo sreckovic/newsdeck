@@ -30,6 +30,10 @@ h1 {
     margin: 0.5em 0.25em;
 }
 
+.container {
+    width: 100%;
+}
+
 .newsdeck {
     width: 100%;
     max-width: 800px;

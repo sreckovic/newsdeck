@@ -33,7 +33,7 @@ class Newsdeck extends Component {
                 this.setState({ sales: this.state.predicted_sales });
             })
             .catch(err => {
-                this.setState({ errors: err });
+                this.setState({ errors: err, loading: true });
             });
     }
 
@@ -115,10 +115,12 @@ class Newsdeck extends Component {
     };
 
     render() {
+        console.log(this.state);
+
         let papers = this.state.newspapers;
         let content;
 
-        if (this.state.loading) {
+        if (this.state.loading || this.state.arrangement === undefined) {
             content = <Spinner />;
         } else {
             content = this.state.arrangement.map(cell => (
@@ -174,9 +176,9 @@ class Newsdeck extends Component {
         }
 
         return (
-            <div>
+            <div className="container">
                 {this.state.errors ? <div className="error" /> : null}
-                {this.state.loading ? (
+                {this.state.loading || this.state.arrangement === undefined ? (
                     content
                 ) : (
                     <div className="newsdeck-list">{content}</div>
