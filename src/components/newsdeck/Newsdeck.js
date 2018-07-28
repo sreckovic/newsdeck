@@ -1,166 +1,160 @@
-import React, { Component } from "react";
-import axios from "../../axios";
+import React, { Component } from 'react';
+
+import axios from '../../axios';
 
 // import Item from './Item';
+import StatusBar from '../status-bar/StatusBar';
+import Spinner from '../ui/spinner/Spinner';
 
 class Newsdeck extends Component {
-  state = {
-    arrangement: [],
-    newspapers: {},
-    predicted_sales: null
-  };
+    state = {
+        arrangement: [],
+        newspapers: {},
+        predicted_sales: null,
+        loading: true,
+        errors: null
+    };
 
-  componentDidMount() {
-    axios
-      .get("/current_arrangement")
-      .then(res => {
-        this.setState({
-          arrangement: res.data.arrangement,
-          newspapers: res.data.newspapers,
-          predicted_sales: res.data.predicted_sales
+    componentDidMount() {
+        this.getData('current_arrangement', '');
+    }
+
+    getData(url, sequence) {
+        axios
+            .get(`/${url}${sequence}`)
+            .then(res => {
+                // You can update just predicted_sales
+                this.setState({
+                    arrangement: res.data.arrangement,
+                    newspapers: res.data.newspapers,
+                    predicted_sales: res.data.predicted_sales,
+                    loading: false
+                });
+            })
+            .catch(err => {
+                this.setState({ errors: err });
+            });
+    }
+
+    onDragStart = (e, cell_id) => {
+        e.dataTransfer.setData('text/plain', cell_id);
+    };
+
+    onDragOver = e => {
+        e.preventDefault();
+    };
+
+    onDrop = e => {
+        let id = parseInt(e.dataTransfer.getData('text'));
+        let cur = parseInt(e.target.parentNode.parentNode.id);
+        let inc, out;
+
+        // Newspaper ID's
+        this.state.arrangement.map(cell => {
+            if (cell.cell_number === id) {
+                inc = cell.newspaper_id;
+            }
+            if (cell.cell_number === cur) {
+                out = cell.newspaper_id;
+            }
         });
-      })
-      .catch(err => {
-        console.log(err);
-      });
-  }
 
-  onDragStart = (e, cell_id) => {
-    e.dataTransfer.setData("text/plain", cell_id);
-  };
-
-  onDragOver = e => {
-    e.preventDefault();
-  };
-
-  onDrop = e => {
-    let id = e.dataTransfer.getData("text");
-    let current_id = e.target.parentNode.parentNode.id.replace("cell_", "");
-    let new_newspaper_id, old_newspaper_id;
-
-    // newspaper id's
-    this.state.arrangement.map(cell => {
-      // new newspaper id
-      if (cell.cell_number == id) {
-        new_newspaper_id = cell.newspaper_id;
-      }
-      // old newspaper id
-      if (cell.cell_number == current_id) {
-        old_newspaper_id = cell.newspaper_id;
-      }
-    });
-
-    // this.state.arrangement.map(cell => {
-    //     if (cell.cell_number == current_id) {
-    //         old_newspaper_id = cell.newspaper_id;
-    //     }
-    // });
-
-    let arrangement = this.state.arrangement.filter(cell => {
-      if (cell.cell_number == id) {
-        cell.newspaper_id = old_newspaper_id;
-      } else if (cell.cell_number == current_id) {
-        cell.newspaper_id = new_newspaper_id;
-      }
-      return cell;
-    });
-
-    this.setState({
-      ...this.state,
-      arrangement
-    });
-
-    let newArrangement = [];
-
-    this.state.arrangement.map(cell => {
-      newArrangement.push(cell.newspaper_id);
-    });
-
-    axios
-      .get(`/get_predicted_sales?arrangement=${newArrangement}`)
-      .then(res => {
-        this.setState({
-          arrangement: res.data.arrangement,
-          newspapers: res.data.newspapers,
-          predicted_sales: res.data.predicted_sales
+        // Replace Newspaper ID's in arrangement cell
+        let arrangement = this.state.arrangement.filter(cell => {
+            if (cell.cell_number === id) {
+                cell.newspaper_id = out;
+            } else if (cell.cell_number === cur) {
+                cell.newspaper_id = inc;
+            }
+            return cell;
         });
-      })
-      .catch(err => {
-        console.log(err);
-      });
-  };
 
-  render() {
-    let papers = this.state.newspapers;
+        // This can be used to spead up render, so we don't wait for update() call
+        // this.setState({
+        //     ...this.state,
+        //     arrangement
+        // });
 
-    let predicted = (
-      <p className="predicted">
-        Total predicted sales{" "}
-        <strong>
-          {Math.round((this.state.predicted_sales + 0.00001) * 100) / 100}
-        </strong>
-      </p>
-    );
+        this.update();
+    };
 
-    return (
-      <div>
-        <div className="newsdeck-list">
-          {this.state.arrangement.map(cell => (
-            // <Item
-            //     key={cell.cell_number}
-            //     cell={cell}
-            //     papers={papers}
-            // />
-            <div
-              id={`cell_${cell.cell_number}`}
-              key={cell.cell_number}
-              onDragOver={e => this.onDragOver(e)}
-              onDrop={e => {
-                this.onDrop(e, cell.cell_number);
-              }}
-            >
-              <div
-                className="paper"
-                draggable
-                onDragStart={e =>
-                  this.onDragStart(e, cell.cell_number, cell.newspaper_id)
-                }
-              >
-                <img
-                  draggable="false"
-                  src={
-                    typeof papers[cell.newspaper_id] !== "undefined"
-                      ? papers[cell.newspaper_id].img
-                      : null
-                  }
-                  alt={
-                    typeof papers[cell.newspaper_id] !== "undefined"
-                      ? papers[cell.newspaper_id].name
-                      : ""
-                  }
-                />
-                <h2>
-                  {typeof papers[cell.newspaper_id] !== "undefined"
-                    ? papers[cell.newspaper_id].name
-                    : "Error!"}
-                </h2>
-                <p className="price">
-                  Price:{" "}
-                  <strong>
-                    ${" "}
-                    {typeof papers[cell.newspaper_id] !== "undefined"
-                      ? papers[cell.newspaper_id].price
-                      : ""}
-                  </strong>
-                </p>
-              </div>
+    update() {
+        let sequence = [];
+
+        // Create new sequence (arrangement)
+        this.state.arrangement.map(cell => {
+            sequence.push(cell.newspaper_id);
+        });
+
+        this.getData('get_predicted_sales?arrangement=', sequence);
+    }
+
+    render() {
+        let papers = this.state.newspapers;
+        let content;
+
+        if (this.state.loading) {
+            content = <Spinner />;
+        } else {
+            content = this.state.arrangement.map(cell => (
+                // <Item
+                //     key={cell.cell_number}
+                //     cell={cell}
+                //     papers={papers}
+                // />
+                <div
+                    id={cell.cell_number}
+                    key={cell.cell_number}
+                    onDragOver={e => this.onDragOver(e)}
+                    onDrop={e => {
+                        this.onDrop(e);
+                    }}
+                >
+                    <div
+                        className="paper"
+                        draggable
+                        onDragStart={e => this.onDragStart(e, cell.cell_number)}
+                    >
+                        <img
+                            draggable="false"
+                            src={
+                                typeof papers[cell.newspaper_id] !== 'undefined'
+                                    ? papers[cell.newspaper_id].img
+                                    : null
+                            }
+                            alt={
+                                typeof papers[cell.newspaper_id] !== 'undefined'
+                                    ? papers[cell.newspaper_id].name
+                                    : ''
+                            }
+                        />
+                        <h2>
+                            {typeof papers[cell.newspaper_id] !== 'undefined'
+                                ? papers[cell.newspaper_id].name
+                                : 'Error!'}
+                        </h2>
+                        <p className="price">
+                            Price:{' '}
+                            <strong>
+                                ${' '}
+                                {typeof papers[cell.newspaper_id] !==
+                                'undefined'
+                                    ? papers[cell.newspaper_id].price
+                                    : ''}
+                            </strong>
+                        </p>
+                    </div>
+                </div>
+            ));
+        }
+
+        return (
+            <div>
+                <div className="newsdeck-list">{content}</div>
+                <StatusBar predicted_sales={this.state.predicted_sales} />
             </div>
-          ))}
-        </div>
-        <div className="status-bar">{predicted}</div>
-      </div>
-    );
-  }
+        );
+    }
 }
 
 export default Newsdeck;
