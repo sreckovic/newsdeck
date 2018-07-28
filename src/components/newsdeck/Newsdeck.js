@@ -10,8 +10,6 @@ class Newsdeck extends Component {
     predicted_sales: null
   };
 
-  // https://secure-cliffs-25767.herokuapp.com/hivery/get_predicted_sales?arrangement=1,1,1,1,2,2,2,3,3,4,4,4,5,8,8,10,11,11,12,12
-
   componentDidMount() {
     axios
       .get("/current_arrangement")
@@ -97,7 +95,7 @@ class Newsdeck extends Component {
 
     let predicted = (
       <p className="predicted">
-        Predicted sales{" "}
+        Total predicted sales{" "}
         <strong>
           {Math.round((this.state.predicted_sales + 0.00001) * 100) / 100}
         </strong>
